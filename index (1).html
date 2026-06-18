@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SkiVision AI</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.26.0/dist/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Unbounded:wght@600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --brand:#0AFFD9;--brand-dim:rgba(10,255,217,.13);--brand-glow:rgba(10,255,217,.28);
+  --s0:#0A0E18;--s1:#111620;--s2:#182030;--s3:#1E2840;
+  --b0:rgba(255,255,255,.06);--b1:rgba(255,255,255,.13);
+  --t0:#F0F2F6;--t1:#8090A8;--t2:#4A5568;
+  --green:#2ECC71;--yellow:#F1C40F;--red:#E74C3C;
+  --g-dim:rgba(46,204,113,.14);--y-dim:rgba(241,196,15,.13);--r-dim:rgba(231,76,60,.14);
+  --nav-h:64px;--top-h:56px;--sb-w:220px;
+  --fh:'Unbounded',sans-serif;--f:'Manrope',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+html,body{height:100%;background:var(--s0);overflow:hidden}
+body{font-family:var(--f);color:var(--t0);font-size:13px;line-height:1.5}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;background:var(--s0);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s,visibility .5s}
+#splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+.sp-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(10,255,217,.09),transparent 58%);pointer-events:none}
+.sp-mark{width:72px;height:72px;background:var(--brand-dim);border:1px solid rgba(10,255,217,.3);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:20px;box-shadow:0 0 36px rgba(10,255,217,.18);animation:spPop .55s cubic-bezier(.2,.9,.25,1.1) both}
+.sp-title{font-family:var(--fh);font-size:20px;color:var(--t0);animation:spUp .45s ease .12s both}
+.sp-title em{color:var(--brand);font-style:normal}
+.sp-sub{font-size:11px;color:var(--t2);letter-spacing:.7px;text-transform:uppercase;margin-top:6px;animation:spUp .45s ease .2s both}
+.sp-bar{width:110px;height:2px;background:var(--s2);border-radius:2px;margin-top:26px;overflow:hidden;animation:spUp .4s ease .28s both}
+.sp-fill{height:100%;width:0;background:var(--brand);border-radius:2px;animation:spLoad 1s ease .32s forwards}
+@keyframes spPop{0%{opacity:0;transform:scale(.55) translateY(10px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes spUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes spLoad{to{width:100%}}
+
+/* ── APP ── */
+#app{height:100dvh;height:100vh;display:flex;opacity:0;transition:opacity .35s}
+#app.show{opacity:1}
+
+/* ════ DESKTOP (≥769px) ════ */
+@media(min-width:769px){
+  .m-only{display:none!important}
+  #app{flex-direction:row}
+
+  /* sidebar */
+  .sidebar{width:var(--sb-w);flex-shrink:0;background:var(--s1);border-right:1px solid var(--b0);display:flex;flex-direction:column}
+  .sb-logo{padding:16px 14px 12px;border-bottom:1px solid var(--b0);font-family:var(--fh);font-size:12.5px;color:var(--brand);display:flex;align-items:center;gap:8px}
+  .sb-logo-icon{width:26px;height:26px;background:var(--brand-dim);border:1px solid rgba(10,255,217,.28);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .sb-nav{padding:10px 8px;flex:1;overflow-y:auto}
+  .sb-label{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--t2);padding:8px 8px 4px}
+  .sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--t1);font-size:12px;font-weight:500;transition:all .15s;margin-bottom:1px}
+  .sb-item:hover{background:var(--s2);color:var(--t0)}
+  .sb-item.active{background:var(--brand-dim);color:var(--brand);border:1px solid rgba(10,255,217,.18)}
+  .sb-item i{font-size:14px}
+  .sb-athletes{padding:10px 8px;border-top:1px solid var(--b0)}
+  .sb-card{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:7px;cursor:pointer;transition:all .15s;margin-bottom:2px}
+  .sb-card:hover{background:var(--s2)}
+  .sb-card.sel{background:var(--s3);border:1px solid var(--b1)}
+  .sb-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+  .sb-name{font-size:12px;font-weight:600;color:var(--t0)}
+  .sb-meta{font-size:10px;color:var(--t2)}
+
+  /* main */
+  .d-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  .d-topbar{height:52px;background:var(--s1);border-bottom:1px solid var(--b0);padding:0 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .d-tbl{display:flex;align-items:center;gap:12px}
+  .d-pg-title{font-family:var(--fh);font-size:11.5px;font-weight:600;color:var(--t0)}
+  .d-bc{color:var(--t2);font-size:11px}
+  .d-tbr{display:flex;gap:8px}
+  .d-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;border:none;transition:all .15s}
+  .d-btn.p{background:var(--brand);color:#000}
+  .d-btn.g{background:var(--s2);color:var(--t1);border:1px solid var(--b0)}
+  .d-btn.g:hover{background:var(--s3);color:var(--t0)}
+
+  .d-tabs{display:flex;border-bottom:1px solid var(--b0);background:var(--s1);padding:0 20px;flex-shrink:0}
+  .d-tab{padding:11px 16px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
+  .d-tab:hover{color:var(--t1)}
+  .d-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .d-badge{background:var(--r-dim);color:var(--red);border-radius:4px;padding:1px 5px;font-size:9px;font-weight:700}
+
+  .d-content{flex:1;overflow-y:auto;padding:18px 20px}
+  .d-content::-webkit-scrollbar{width:4px}
+  .d-content::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+  .d-panel{display:none}
+  .d-panel.active{display:block}
+
+  /* metrics */
+  .d-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .d-mcard{background:var(--s1);border:1px solid var(--b0);border-radius:9px;padding:12px 14px}
+  .d-mlabel{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+  .d-mval{font-family:var(--fm);font-size:22px;font-weight:500;color:var(--t0);line-height:1}
+  .d-munit{font-size:11px;color:var(--t2);margin-top:2px}
+  .d-mdelta{font-size:10.5px;font-weight:600;margin-top:4px}
+
+  /* report grid */
+  .d-rgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .d-span2{grid-column:1/-1}
+
+  /* skeleton */
+  .d-skel{background:var(--s1);border:1px solid var(--b0);border-radius:10px;overflow:hidden}
+  .d-skel-hd{padding:10px 14px;border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between}
+  .d-skel-title{font-size:11px;font-weight:700;color:var(--t1);letter-spacing:.5px;text-transform:uppercase}
+  .d-phase-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;background:var(--brand-dim);color:var(--brand);border:1px solid rgba(10,255,217,.22)}
+  .d-skel-canvas-wrap{width:100%;height:280px;display:flex;align-items:center;justify-content:center;position:relative}
+  #dSkelCanvas{display:block;width:100%;height:100%}
+  .d-skel-ctrl{padding:10px 14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--b0)}
+  .d-cbar{flex:1;height:4px;background:var(--s2);border-radius:2px;cursor:pointer;position:relative}
+  .d-cbar-fill{height:100%;background:var(--brand);border-radius:2px;transition:width .1s}
+  .d-clabel{font-family:var(--fm);font-size:11px;color:var(--t2)}
+  .d-cb{width:28px;height:28px;background:var(--s2);border:1px solid var(--b0);color:var(--t1);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .15s}
+  .d-cb:hover{background:var(--s3);color:var(--t0)}
+
+  /* errors panel */
+  .d-err{background:var(--s1);border:1px solid var(--b0);border-radius:10px;overflow:hidden}
+  .d-err-hd{padding:10px 14px;border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between}
+  .d-ei{padding:12px 14px;border-bottom:1px solid var(--b0);cursor:pointer;transition:background .12s}
+  .d-ei:last-child{border:none}
+  .d-ei:hover{background:var(--s2)}
+  .d-et{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px}
+  .d-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+  .d-dot.r{background:var(--red);box-shadow:0 0 6px rgba(231,76,60,.5)}
+  .d-dot.y{background:var(--yellow);box-shadow:0 0 6px rgba(241,196,15,.4)}
+  .d-dot.g{background:var(--green);box-shadow:0 0 6px rgba(46,204,113,.4)}
+  .d-etitle{font-size:12px;font-weight:600;color:var(--t0);line-height:1.4}
+  .d-eadv{font-size:11px;color:var(--t1);margin-left:15px;line-height:1.5}
+  .d-emeta{display:flex;align-items:center;gap:8px;margin-top:6px;margin-left:15px}
+  .d-chip{font-family:var(--fm);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+  .d-chip.bad{background:var(--r-dim);color:var(--red)}
+  .d-chip.warn{background:var(--y-dim);color:var(--yellow)}
+  .d-chip.ok{background:var(--g-dim);color:var(--green)}
+  .d-chip.ref{background:var(--s2);color:var(--t2)}
+
+  /* charts */
+  .d-charts{background:var(--s1);border:1px solid var(--b0);border-radius:10px;overflow:hidden}
+  .d-ctabs{display:flex;border-bottom:1px solid var(--b0);padding:0 12px}
+  .d-ctab{padding:9px 12px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+  .d-ctab.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .d-carea{padding:14px}
+
+  /* phase bars */
+  .d-phasesec{padding:14px}
+  .d-prow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .d-pname{font-size:10.5px;color:var(--t2);width:140px;flex-shrink:0;text-align:right}
+  .d-ptrack{flex:1;height:18px;background:var(--s2);border-radius:4px;overflow:hidden}
+  .d-pseg{height:100%}
+
+  /* compare */
+  .d-crow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--s2);border-radius:7px;margin-bottom:6px}
+  .d-cname{flex:1;font-size:11.5px;font-weight:600;color:var(--t1)}
+  .d-cval{font-family:var(--fm);font-size:13px;font-weight:500}
+  .d-cref{font-family:var(--fm);font-size:11px;color:var(--t2)}
+
+  /* upload */
+  .d-ugrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+  .d-uzone{border:1.5px dashed var(--b1);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s1);display:block}
+  .d-uzone:hover{border-color:var(--brand);background:var(--brand-dim)}
+  .d-uzone.has-file{border-color:var(--green);border-style:solid;background:var(--g-dim)}
+  .d-uicon{font-size:28px;color:var(--t2);margin-bottom:8px}
+  .d-uzone.has-file .d-uicon{color:var(--green)}
+  .d-utitle{font-size:13px;font-weight:600;color:var(--t0);margin-bottom:3px}
+  .d-usub{font-size:11px;color:var(--t2)}
+  .d-asec{background:var(--s1);border:1px solid var(--b0);border-radius:10px;padding:16px;margin-bottom:14px}
+  .d-stitle{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t2);margin-bottom:14px}
+  .d-fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .d-flabel{font-size:10.5px;font-weight:600;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  .d-finput{background:var(--s0);border:1px solid var(--b1);border-radius:7px;padding:8px 11px;color:var(--t0);font-family:var(--fm);font-size:13px;width:100%;font-weight:500;transition:border-color .15s}
+  .d-finput:focus{outline:none;border-color:var(--brand)}
+  .d-funit{font-size:10px;color:var(--t2);margin-top:3px}
+  .d-aprg{background:var(--s1);border:1px solid var(--b0);border-radius:10px;padding:24px;margin-bottom:14px}
+  .d-steps{display:flex;flex-direction:column;gap:10px}
+  .d-srow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:7px}
+  .d-srow.done{background:var(--g-dim)}
+  .d-srow.running{background:var(--brand-dim);border:1px solid rgba(10,255,217,.18)}
+  .d-srow.pending{opacity:.4}
+  .d-srow.done .d-si{color:var(--green)}
+  .d-srow.running .d-si{color:var(--brand)}
+  .d-si{font-size:16px}
+  .d-st{flex:1}
+  .d-sn{font-size:12px;font-weight:600;color:var(--t0)}
+  .d-ss{font-size:10.5px;color:var(--t1);margin-top:1px}
+  .d-spinner{width:14px;height:14px;border:2px solid rgba(10,255,217,.18);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
+  .d-pbar{background:var(--s2);border-radius:3px;height:3px;overflow:hidden}
+  .d-pfill{height:100%;background:var(--brand);border-radius:3px;transition:width .4s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+}
+
+/* ════ MOBILE (≤768px) ════ */
+@media(max-width:768px){
+  .d-only,.sidebar{display:none!important}
+  #app{flex-direction:column}
+
+  /* topbar */
+  .m-top{height:var(--top-h);background:var(--s1);border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:10}
+  .m-logo{display:flex;align-items:center;gap:8px;font-family:var(--fh);font-size:13px;color:var(--brand)}
+  .m-logo-icon{width:30px;height:30px;background:var(--brand-dim);border:1px solid rgba(10,255,217,.28);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .m-topbtns{display:flex;gap:6px}
+  .m-ibtn{width:36px;height:36px;background:var(--s2);border:1px solid var(--b0);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--t1);font-size:17px;cursor:pointer;position:relative;transition:all .12s}
+  .m-ibtn:active{background:var(--s3);transform:scale(.93)}
+  .m-ndot{position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--red);border-radius:50%;border:1.5px solid var(--s1)}
+
+  /* pages */
+  .m-pages{flex:1;overflow:hidden;position:relative}
+  .m-page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(var(--nav-h) + 14px);display:none;animation:mFade .18s ease}
+  .m-page.active{display:block}
+  .m-page::-webkit-scrollbar{width:0}
+  @keyframes mFade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  /* bottom nav */
+  .m-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--s1);border-top:1px solid var(--b0);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+  .m-nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--t2);font-size:9.5px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:color .15s;position:relative}
+  .m-nbtn i{font-size:22px;transition:all .15s}
+  .m-nbtn.active{color:var(--brand)}
+  .m-nbtn.active i{text-shadow:0 0 12px var(--brand-glow)}
+  .m-nbtn:active{transform:scale(.92)}
+  .m-nbar{position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--brand);border-radius:0 0 2px 2px;opacity:0;transition:opacity .15s}
+  .m-nbtn.active .m-nbar{opacity:1}
+  .m-nbadge{position:absolute;top:8px;right:calc(50% - 22px);background:var(--red);color:#fff;font-size:8px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--s1)}
+
+  /* cards */
+  .card{background:var(--s1);border:1px solid var(--b0);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .card-hd{padding:11px 14px;border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between}
+  .card-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t2)}
+
+  /* athletes */
+  .m-athletes{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:14px;padding-bottom:2px}
+  .m-athletes::-webkit-scrollbar{display:none}
+  .m-achip{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--s1);border:1px solid var(--b0);border-radius:40px;cursor:pointer;transition:all .15s}
+  .m-achip.sel{background:var(--brand-dim);border-color:rgba(10,255,217,.3)}
+  .m-achip:active{transform:scale(.96)}
+  .m-aav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+  .m-aname{font-size:12px;font-weight:600;color:var(--t0)}
+  .m-arank{font-size:10px;color:var(--t2)}
+
+  /* summary */
+  .m-sumbar{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--s1);border:1px solid var(--b0);border-radius:12px;margin-bottom:12px}
+  .m-score{width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--yellow) 0deg 216deg,var(--s3) 216deg);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+  .m-si{position:absolute;inset:4px;background:var(--s1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:13px;font-weight:500;color:var(--yellow)}
+  .m-stext{flex:1}
+  .m-sname{font-size:13px;font-weight:700;color:var(--t0)}
+  .m-smeta{font-size:11px;color:var(--t2);margin-top:2px}
+  .m-sstatus{font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;background:var(--y-dim);color:var(--yellow);text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
+
+  /* metrics */
+  .m-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .m-mcard{background:var(--s1);border:1px solid var(--b0);border-radius:12px;padding:12px 13px}
+  .m-mlabel{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .m-mval{font-family:var(--fm);font-size:24px;font-weight:500;line-height:1}
+  .m-munit{font-size:10px;color:var(--t2);margin-top:3px}
+  .m-mdelta{font-size:10px;font-weight:600;margin-top:5px;display:flex;align-items:center;gap:3px}
+  .ok{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}
+
+  /* skeleton */
+  .m-skelwrap{background:var(--s1);border:1px solid var(--b0);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .m-skeltop{padding:10px 13px;border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between}
+  .m-phase-badge{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:5px;background:var(--brand-dim);color:var(--brand);border:1px solid rgba(10,255,217,.22)}
+  .m-skel-canvas-wrap{width:100%;height:240px;display:flex;align-items:center;justify-content:center;position:relative;background:var(--s0)}
+  #mSkelCanvas{display:block}
+  .m-skelctrl{padding:10px 13px;border-top:1px solid var(--b0);display:flex;align-items:center;gap:8px}
+  .m-cb{width:34px;height:34px;background:var(--s2);border:1px solid var(--b0);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t1);font-size:15px;cursor:pointer;flex-shrink:0;transition:all .12s}
+  .m-cb:active{background:var(--s3);transform:scale(.93)}
+  .m-cb.play{background:var(--brand-dim);border-color:rgba(10,255,217,.3);color:var(--brand)}
+  .m-tl{flex:1;height:4px;background:var(--s3);border-radius:2px;position:relative;cursor:pointer;touch-action:none}
+  .m-tl-fill{height:100%;background:var(--brand);border-radius:2px;pointer-events:none;position:relative}
+  .m-tl-thumb{position:absolute;right:-5px;top:-4px;width:12px;height:12px;background:var(--brand);border-radius:50%;border:2px solid var(--s1);pointer-events:none}
+  .m-tlabel{font-family:var(--fm);font-size:10px;color:var(--t2);flex-shrink:0}
+  .m-legend{display:flex;gap:12px;padding:8px 13px 11px}
+  .m-litem{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--t1)}
+  .ldot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+  /* errors */
+  .m-ei{padding:13px 14px;border-bottom:1px solid var(--b0);transition:background .12s}
+  .m-ei:last-child{border:none}
+  .m-ei:active{background:var(--s2)}
+  .m-etop{display:flex;align-items:flex-start;gap:9px;margin-bottom:5px}
+  .m-edot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+  .m-edot.r{background:var(--red);box-shadow:0 0 6px rgba(231,76,60,.45)}
+  .m-edot.y{background:var(--yellow);box-shadow:0 0 6px rgba(241,196,15,.35)}
+  .m-edot.g{background:var(--green);box-shadow:0 0 6px rgba(46,204,113,.4)}
+  .m-etitle{font-size:13px;font-weight:600;color:var(--t0);line-height:1.35}
+  .m-etext{font-size:11.5px;color:var(--t1);line-height:1.5;padding-left:17px}
+  .m-echips{display:flex;gap:6px;padding-left:17px;margin-top:7px;flex-wrap:wrap}
+  .chip{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500}
+  .chip.bad{background:var(--r-dim);color:var(--red)}
+  .chip.warn{background:var(--y-dim);color:var(--yellow)}
+  .chip.ok{background:var(--g-dim);color:var(--green)}
+  .chip.ref{background:var(--s2);color:var(--t2)}
+
+  /* phase bars */
+  .m-prow{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .m-pname{font-size:11px;color:var(--t1);width:100px;flex-shrink:0;text-align:right;font-weight:500}
+  .m-ptrack{flex:1;height:20px;background:var(--s2);border-radius:5px;overflow:hidden}
+  .m-pseg{height:100%;border-radius:5px}
+  .m-ppct{font-family:var(--fm);font-size:10px;color:var(--t2);width:28px;text-align:right;flex-shrink:0}
+
+  /* chart tabs */
+  .m-ctabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--b0);padding:0 2px;scrollbar-width:none}
+  .m-ctabs::-webkit-scrollbar{display:none}
+  .m-ctab{flex-shrink:0;padding:10px 15px;font-size:11.5px;font-weight:600;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+  .m-ctab.active{color:var(--brand);border-bottom-color:var(--brand)}
+  .m-cpanel{padding:14px;display:none}
+  .m-cpanel.active{display:block}
+
+  /* compare */
+  .m-crow{display:flex;align-items:center;gap:8px;padding:11px 13px;background:var(--s2);border-radius:9px;margin-bottom:7px}
+  .m-cname{flex:1;font-size:12px;font-weight:600;color:var(--t1)}
+  .m-cval{font-family:var(--fm);font-size:13px;font-weight:500}
+  .m-cref{font-family:var(--fm);font-size:10px;color:var(--t2)}
+
+  /* upload */
+  .m-ugrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .m-uzone{border:1.5px dashed var(--b1);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s1);display:block}
+  .m-uzone:active{transform:scale(.98)}
+  .m-uzone.has-file{border-color:var(--green);border-style:solid;background:var(--g-dim)}
+  .m-uzone .m-uicon{font-size:32px;color:var(--t2);margin-bottom:7px;transition:color .2s}
+  .m-uzone.has-file .m-uicon{color:var(--green)}
+  .m-utitle{font-size:13px;font-weight:700;color:var(--t0);margin-bottom:3px}
+  .m-usub{font-size:11px;color:var(--t2)}
+  .m-sec{background:var(--s1);border:1px solid var(--b0);border-radius:12px;padding:14px;margin-bottom:12px}
+  .m-stitle{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t2);margin-bottom:12px}
+  .m-fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .m-flabel{font-size:10.5px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .m-finput{background:var(--s2);border:1px solid var(--b1);border-radius:9px;padding:11px 13px;color:var(--t0);font-family:var(--fm);font-size:14px;width:100%;font-weight:500;-webkit-appearance:none;transition:border-color .15s}
+  .m-finput:focus{outline:none;border-color:var(--brand)}
+  .m-btnfull{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;font-size:14px;font-weight:700;font-family:var(--f);cursor:pointer;border:none;transition:all .15s}
+  .m-btnfull:active{transform:scale(.98);opacity:.9}
+  .m-btnfull.p{background:var(--brand);color:#000}
+  .m-btnfull.g{background:var(--s2);color:var(--t1);border:1px solid var(--b0)}
+  input[type=file]{display:none}
+
+  /* steps */
+  .m-srow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:8px}
+  .m-srow.done{background:var(--g-dim)}
+  .m-srow.running{background:var(--brand-dim);border:1px solid rgba(10,255,217,.18)}
+  .m-srow.pending{opacity:.38}
+  .m-srow.done .m-sico{color:var(--green)}
+  .m-srow.running .m-sico{color:var(--brand)}
+  .m-sico{font-size:18px}
+  .m-sinfo{flex:1}
+  .m-sname{font-size:12.5px;font-weight:600;color:var(--t0)}
+  .m-ssub{font-size:10.5px;color:var(--t1);margin-top:1px}
+  .m-spinner{width:16px;height:16px;border:2px solid rgba(10,255,217,.18);border-top-color:var(--brand);border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0}
+  .m-ptrack2{background:var(--s2);border-radius:3px;height:4px;overflow:hidden;margin:10px 0 5px}
+  .m-pfill{height:100%;background:var(--brand);border-radius:3px;transition:width .4s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* tip */
+  .tip{background:var(--s2);border-left:3px solid var(--yellow);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11.5px;color:var(--t1);line-height:1.5;margin-top:12px}
+
+  /* toast */
+  .m-toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--b1);color:var(--t0);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:200;opacity:0;transition:opacity .2s;white-space:nowrap;pointer-events:none}
+  .m-toast.show{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<!-- ════ SPLASH ════ -->
+<div id="splash">
+  <div class="sp-bg"></div>
+  <div class="sp-mark">⛷</div>
+  <div class="sp-title">SkiVision <em>AI</em></div>
+  <div class="sp-sub">Анализ лыжной техники</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<!-- ════ APP ════ -->
+<div id="app">
+
+  <!-- ══ SIDEBAR (desktop only) ══ -->
+  <div class="sidebar d-only">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">⛷</div>
+      SkiVision AI
+    </div>
+    <div class="sb-nav">
+      <div class="sb-label">Меню</div>
+      <div class="sb-item active" onclick="dSetNav(this)"><i class="ti ti-layout-dashboard"></i> Дашборд</div>
+      <div class="sb-item" onclick="dSetNav(this);dSetTab('upload',document.querySelector('[data-dtab=upload]'))"><i class="ti ti-upload"></i> Новый анализ</div>
+      <div class="sb-item" onclick="dSetNav(this);dSetTab('compare',document.querySelector('[data-dtab=compare]'))"><i class="ti ti-chart-line"></i> Прогресс</div>
+      <div class="sb-item" onclick="dSetNav(this)"><i class="ti ti-database"></i> Эталоны</div>
+      <div class="sb-label" style="margin-top:10px">Спортсмены</div>
+    </div>
+    <div class="sb-athletes">
+      <div class="sb-card sel" onclick="dSelAthlete(this,'Громов А.В.','МС')">
+        <div class="sb-av" style="background:rgba(10,255,217,.15);color:#0AFFD9">АГ</div>
+        <div><div class="sb-name">Громов А.В.</div><div class="sb-meta">МС · 24.05.2025</div></div>
+      </div>
+      <div class="sb-card" onclick="dSelAthlete(this,'Ковалёва Е.С.','КМС')">
+        <div class="sb-av" style="background:rgba(231,76,60,.15);color:#E74C3C">ЕК</div>
+        <div><div class="sb-name">Ковалёва Е.С.</div><div class="sb-meta">КМС · 21.05.2025</div></div>
+      </div>
+      <div class="sb-card" onclick="dSelAthlete(this,'Зайцев П.О.','1р')">
+        <div class="sb-av" style="background:rgba(241,196,15,.15);color:#F1C40F">ПЗ</div>
+        <div><div class="sb-name">Зайцев П.О.</div><div class="sb-meta">1р · 18.05.2025</div></div>
+      </div>
+      <div class="sb-card" onclick="dSetTab('upload',document.querySelector('[data-dtab=upload]'))">
+        <div class="sb-av" style="background:var(--s2);color:var(--t2)"><i class="ti ti-plus" style="font-size:12px"></i></div>
+        <div><div class="sb-name" style="color:var(--t2)">Добавить...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DESKTOP MAIN ══ -->
+  <div class="d-main d-only">
+    <div class="d-topbar">
+      <div class="d-tbl">
+        <div class="d-pg-title" id="dTitle">Отчёт об анализе</div>
+        <div class="d-bc" id="dBc">Громов А.В. · 24.05.2025 · Классический ход</div>
+      </div>
+      <div class="d-tbr">
+        <button class="d-btn g" onclick="dExport(this)"><i class="ti ti-download"></i> Экспорт PDF</button>
+        <button class="d-btn g"><i class="ti ti-send"></i> Отправить</button>
+        <button class="d-btn p" onclick="dSetTab('upload',document.querySelector('[data-dtab=upload]'))"><i class="ti ti-plus"></i> Новый анализ</button>
+      </div>
+    </div>
+    <div class="d-tabs">
+      <div class="d-tab active" data-dtab="report" onclick="dSetTab('report',this)"><i class="ti ti-activity"></i> Отчёт</div>
+      <div class="d-tab" data-dtab="upload" onclick="dSetTab('upload',this)"><i class="ti ti-upload"></i> Загрузка видео</div>
+      <div class="d-tab" data-dtab="charts" onclick="dSetTab('charts',this)"><i class="ti ti-chart-dots"></i> Графики</div>
+      <div class="d-tab" data-dtab="errors" onclick="dSetTab('errors',this)"><i class="ti ti-alert-triangle"></i> Ошибки <span class="d-badge">3</span></div>
+      <div class="d-tab" data-dtab="compare" onclick="dSetTab('compare',this)"><i class="ti ti-git-compare"></i> Сравнение</div>
+    </div>
+    <div class="d-content">
+
+      <!-- report -->
+      <div class="d-panel active" id="dpanel-report">
+        <div class="d-metrics">
+          <div class="d-mcard"><div class="d-mlabel">Угол правого колена</div><div class="d-mval" style="color:var(--yellow)">145°</div><div class="d-munit">Норма: 130–140°</div><div class="d-mdelta" style="color:var(--red)">▲ +5° от нормы</div></div>
+          <div class="d-mcard"><div class="d-mlabel">Наклон туловища</div><div class="d-mval" style="color:var(--red)">22°</div><div class="d-munit">Норма: 30–35°</div><div class="d-mdelta" style="color:var(--red)">▼ −10° от нормы</div></div>
+          <div class="d-mcard"><div class="d-mlabel">Длина шага</div><div class="d-mval" style="color:var(--green)">1.84 м</div><div class="d-munit">Норма: 1.7–2.0 м</div><div class="d-mdelta" style="color:var(--green)">✓ В норме</div></div>
+          <div class="d-mcard"><div class="d-mlabel">Частота шагов</div><div class="d-mval" style="color:var(--green)">76</div><div class="d-munit">шаг/мин</div><div class="d-mdelta" style="color:var(--green)">✓ В норме</div></div>
+        </div>
+        <div class="d-rgrid">
+          <div class="d-skel d-span2">
+            <div class="d-skel-hd">
+              <div class="d-skel-title">Визуализация скелета · Боковой ракурс</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div class="d-phase-badge" id="dPhaseBadge">Фаза: скольжение</div>
+                <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>Норма</span>
+                <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--yellow)"><span style="width:7px;height:7px;border-radius:50%;background:var(--yellow);display:inline-block"></span>Отклонение</span>
+                <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--red)"><span style="width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block"></span>Ошибка</span>
+              </div>
+            </div>
+            <div class="d-skel-canvas-wrap"><canvas id="dSkelCanvas"></canvas></div>
+            <div class="d-skel-ctrl">
+              <div class="d-cb" onclick="skPrev('d')"><i class="ti ti-chevron-left"></i></div>
+              <div class="d-cb" id="dPlayBtn" onclick="skToggle('d')"><i class="ti ti-player-play"></i></div>
+              <div class="d-cb" onclick="skNext('d')"><i class="ti ti-chevron-right"></i></div>
+              <div class="d-cbar" id="dBar" onclick="skSeek(event,this,'d')"><div class="d-cbar-fill" id="dFill"></div></div>
+              <div class="d-clabel" id="dLabel">2.1 / 5.0 с</div>
+              <div class="d-cb" style="margin-left:auto" onclick="skReset('d')"><i class="ti ti-refresh"></i></div>
+            </div>
+          </div>
+          <div class="d-err">
+            <div class="d-err-hd"><div class="d-skel-title">Ошибки и рекомендации</div><div style="font-size:10px;color:var(--t2)">3 выявлено</div></div>
+            <div class="d-ei"><div class="d-et"><div class="d-dot r"></div><div class="d-etitle">Недостаточный наклон туловища</div></div><div class="d-eadv">Угол 22° вместо нормы 30–35°. Наклоните корпус вперёд.</div><div class="d-emeta"><span class="d-chip bad">22°</span><span style="font-size:10px;color:var(--t2)">→ норма</span><span class="d-chip ref">30–35°</span></div></div>
+            <div class="d-ei"><div class="d-et"><div class="d-dot y"></div><div class="d-etitle">Угол правого колена завышен</div></div><div class="d-eadv">145° вместо 130–140°. Увеличьте сгибание в фазе толчка.</div><div class="d-emeta"><span class="d-chip warn">145°</span><span style="font-size:10px;color:var(--t2)">→ норма</span><span class="d-chip ref">130–140°</span></div></div>
+            <div class="d-ei"><div class="d-et"><div class="d-dot y"></div><div class="d-etitle">Асимметрия работы рук</div></div><div class="d-eadv">Левая рука отстаёт на 0.08 с. Синхронизируйте движения.</div><div class="d-emeta"><span class="d-chip warn">Δ 0.08 с</span></div></div>
+            <div class="d-ei"><div class="d-et"><div class="d-dot g"></div><div class="d-etitle">Длина и частота шага — норма</div></div><div class="d-eadv">Оба параметра в пределах эталона. Продолжайте работу.</div><div class="d-emeta"><span class="d-chip ok">1.84 м</span><span class="d-chip ok">76 ш/мин</span></div></div>
+          </div>
+          <div class="d-charts">
+            <div class="d-ctabs">
+              <div class="d-ctab active" onclick="dSetCTab('dph',this)">Фазы</div>
+              <div class="d-ctab" onclick="dSetCTab('dang',this)">Углы</div>
+              <div class="d-ctab" onclick="dSetCTab('dst',this)">Шаг</div>
+            </div>
+            <div id="dph" class="d-phasesec">
+              <div style="font-size:10px;color:var(--t2);margin-bottom:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase">Распределение фаз движения</div>
+              <div class="d-prow"><div class="d-pname">Скольжение л.</div><div class="d-ptrack"><div class="d-pseg" style="width:38%;background:rgba(10,255,217,.6)"></div></div><div style="font-family:var(--fm);font-size:10px;color:var(--t2);width:30px;text-align:right">38%</div></div>
+              <div class="d-prow"><div class="d-pname">Отталкивание л.</div><div class="d-ptrack"><div class="d-pseg" style="width:18%;background:rgba(231,76,60,.7)"></div></div><div style="font-family:var(--fm);font-size:10px;color:var(--t2);width:30px;text-align:right">18%</div></div>
+              <div class="d-prow"><div class="d-pname">Скольжение п.</div><div class="d-ptrack"><div class="d-pseg" style="width:32%;background:rgba(10,255,217,.4)"></div></div><div style="font-family:var(--fm);font-size:10px;color:var(--t2);width:30px;text-align:right">32%</div></div>
+              <div class="d-prow"><div class="d-pname">Отталкивание п.</div><div class="d-ptrack"><div class="d-pseg" style="width:12%;background:rgba(241,196,15,.7)"></div></div><div style="font-family:var(--fm);font-size:10px;color:var(--t2);width:30px;text-align:right">12%</div></div>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--b0);font-size:10.5px;color:var(--t2)">💡 Фаза отталкивания п. короче нормы на <span style="color:var(--yellow);font-weight:700">6%</span></div>
+            </div>
+            <div id="dang" class="d-carea" style="display:none"><div style="position:relative;width:100%;height:180px"><canvas id="dAngChart"></canvas></div></div>
+            <div id="dst" class="d-carea" style="display:none"><div style="position:relative;width:100%;height:180px"><canvas id="dStepChart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- upload -->
+      <div class="d-panel" id="dpanel-upload">
+        <div class="d-asec">
+          <div class="d-stitle">Антропометрия спортсмена</div>
+          <div class="d-fgrid">
+            <div><div class="d-flabel">Рост</div><input class="d-finput" type="number" value="178"><div class="d-funit">см</div></div>
+            <div><div class="d-flabel">Длина бедра</div><input class="d-finput" type="number" value="44"><div class="d-funit">см</div></div>
+            <div><div class="d-flabel">Длина голени</div><input class="d-finput" type="number" value="41"><div class="d-funit">см</div></div>
+            <div><div class="d-flabel">Длина плеча</div><input class="d-finput" type="number" value="32"><div class="d-funit">см</div></div>
+            <div><div class="d-flabel">Предплечье</div><input class="d-finput" type="number" value="27"><div class="d-funit">см</div></div>
+            <div><div class="d-flabel">Ход</div><select class="d-finput"><option>Классический</option><option>Коньковый</option></select></div>
+          </div>
+        </div>
+        <div class="d-ugrid">
+          <label for="dVidF"><div class="d-uzone" id="dFrontZone"><div class="d-uicon"><i class="ti ti-video"></i></div><div class="d-utitle">Фронтальный ракурс</div><div class="d-usub">MP4, MOV · ≥60 fps · 1080p</div></div></label>
+          <input type="file" id="dVidF" accept="video/*" onchange="dFileOk('dFrontZone')">
+          <label for="dVidS"><div class="d-uzone" id="dSideZone"><div class="d-uicon"><i class="ti ti-video"></i></div><div class="d-utitle">Боковой ракурс</div><div class="d-usub">MP4, MOV · ≥60 fps · 1080p</div></div></label>
+          <input type="file" id="dVidS" accept="video/*" onchange="dFileOk('dSideZone')">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+          <button class="d-btn g">Сохранить черновик</button>
+          <button class="d-btn p" onclick="dStartAnalysis()"><i class="ti ti-player-play"></i> Запустить анализ</button>
+        </div>
+        <div id="dAnalBlock" style="display:none;margin-top:16px">
+          <div class="d-aprg">
+            <div class="d-stitle" style="margin-bottom:16px">Обработка видео</div>
+            <div class="d-steps" id="dSteps">
+              <div class="d-srow done"><div class="d-si"><i class="ti ti-check"></i></div><div class="d-st"><div class="d-sn">Загрузка видео</div><div class="d-ss">2 файла · 347 МБ</div></div></div>
+              <div class="d-srow running" id="ds1"><div class="d-si"><i class="ti ti-robot"></i></div><div class="d-st"><div class="d-sn">Детекция скелета (MediaPipe)</div><div class="d-ss" id="ds1s">Выполняется...</div></div><div class="d-spinner"></div></div>
+              <div class="d-srow pending" id="ds2"><div class="d-si"><i class="ti ti-ruler"></i></div><div class="d-st"><div class="d-sn">Калибровка пиксель → метр</div><div class="d-ss">Ожидание...</div></div></div>
+              <div class="d-srow pending" id="ds3"><div class="d-si"><i class="ti ti-math"></i></div><div class="d-st"><div class="d-sn">Расчёт биомеханических параметров</div><div class="d-ss">Ожидание...</div></div></div>
+              <div class="d-srow pending" id="ds4"><div class="d-si"><i class="ti ti-git-compare"></i></div><div class="d-st"><div class="d-sn">Сравнение с эталонной моделью</div><div class="d-ss">Ожидание...</div></div></div>
+            </div>
+            <div class="d-pbar" style="margin-top:16px"><div class="d-pfill" id="dPFill" style="width:23%"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:10.5px;color:var(--t2)" id="dPPct">23%</span><span style="font-size:10.5px;color:var(--t2)">~18 сек осталось</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- charts -->
+      <div class="d-panel" id="dpanel-charts">
+        <div class="d-charts" style="margin-bottom:14px">
+          <div class="d-ctabs">
+            <div class="d-ctab active" onclick="dSetCTab2('dc1',this)">Углы суставов</div>
+            <div class="d-ctab" onclick="dSetCTab2('dc2',this)">Длина шага</div>
+            <div class="d-ctab" onclick="dSetCTab2('dc3',this)">Частота</div>
+          </div>
+          <div class="d-carea">
+            <div id="dc1"><div style="position:relative;width:100%;height:260px"><canvas id="dAC2"></canvas></div></div>
+            <div id="dc2" style="display:none"><div style="position:relative;width:100%;height:260px"><canvas id="dSC2"></canvas></div></div>
+            <div id="dc3" style="display:none"><div style="position:relative;width:100%;height:260px"><canvas id="dFC2"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- errors -->
+      <div class="d-panel" id="dpanel-errors">
+        <div class="d-err">
+          <div class="d-err-hd"><div class="d-skel-title">Все выявленные параметры</div></div>
+          <div class="d-ei"><div class="d-et"><div class="d-dot r"></div><div class="d-etitle">Недостаточный наклон туловища — критичная ошибка</div></div><div class="d-eadv">22° против нормы 30–35°. Снижает эффективность отталкивания и длину шага.</div><div class="d-emeta"><span class="d-chip bad">22°</span><span style="font-size:10px;color:var(--t2)">→</span><span class="d-chip ref">30–35°</span></div></div>
+          <div class="d-ei"><div class="d-et"><div class="d-dot y"></div><div class="d-etitle">Угол правого колена при отталкивании</div></div><div class="d-eadv">145° (норма 130–140°). Увеличьте сгибание — повысит мощность толчка.</div><div class="d-emeta"><span class="d-chip warn">145°</span><span style="font-size:10px;color:var(--t2)">→</span><span class="d-chip ref">130–140°</span></div></div>
+          <div class="d-ei"><div class="d-et"><div class="d-dot y"></div><div class="d-etitle">Асимметрия переноса рук</div></div><div class="d-eadv">Левая рука отстаёт на 0.08 с. Упражнения на синхронизацию.</div><div class="d-emeta"><span class="d-chip warn">Δ 0.08 с</span></div></div>
+          <div class="d-ei"><div class="d-et"><div class="d-dot g"></div><div class="d-etitle">Длина шага</div></div><div class="d-eadv">1.84 м — в пределах нормы для роста 176–180 см.</div><div class="d-emeta"><span class="d-chip ok">1.84 м</span><span class="d-chip ref">1.7–2.0 м</span></div></div>
+          <div class="d-ei"><div class="d-et"><div class="d-dot g"></div><div class="d-etitle">Частота шагов</div></div><div class="d-eadv">76 ш/мин — норма для классического хода на умеренном рельефе.</div><div class="d-emeta"><span class="d-chip ok">76 ш/мин</span><span class="d-chip ref">70–85</span></div></div>
+        </div>
+      </div>
+
+      <!-- compare -->
+      <div class="d-panel" id="dpanel-compare">
+        <div class="d-asec" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:12px;font-weight:600;color:var(--t1)">Сравнить:</div>
+            <select class="d-finput" style="width:160px"><option>24.05.2025</option><option>15.04.2025</option></select>
+            <div style="font-size:12px;color:var(--t2)">vs</div>
+            <select class="d-finput" style="width:160px"><option>15.04.2025</option><option>01.03.2025</option></select>
+            <button class="d-btn g">Сравнить</button>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="d-stitle" style="margin-bottom:12px">Изменение параметров: 24.05 vs 15.04.2025</div>
+          <div class="d-crow"><div class="d-cname">Наклон туловища</div><div class="d-cval" style="color:var(--red)">22°</div><div style="font-size:12px;color:var(--t2);margin:0 4px">→</div><div class="d-cval" style="color:var(--yellow)">26°</div><div class="d-cref" style="margin-left:auto">норма 30–35°</div></div>
+          <div class="d-crow"><div class="d-cname">Угол правого колена</div><div class="d-cval" style="color:var(--yellow)">145°</div><div style="font-size:12px;color:var(--t2);margin:0 4px">→</div><div class="d-cval" style="color:var(--yellow)">148°</div><div class="d-cref" style="margin-left:auto">норма 130–140°</div></div>
+          <div class="d-crow"><div class="d-cname">Длина шага</div><div class="d-cval" style="color:var(--green)">1.84 м</div><div style="font-size:12px;color:var(--t2);margin:0 4px">→</div><div class="d-cval" style="color:var(--green)">1.76 м</div><div class="d-cref" style="margin-left:auto">норма 1.7–2.0 м</div></div>
+          <div class="d-crow"><div class="d-cname">Частота шагов</div><div class="d-cval" style="color:var(--green)">76 ш/мин</div><div style="font-size:12px;color:var(--t2);margin:0 4px">→</div><div class="d-cval" style="color:var(--green)">72 ш/мин</div><div class="d-cref" style="margin-left:auto">норма 70–85</div></div>
+        </div>
+        <div style="position:relative;width:100%;height:260px"><canvas id="dCmpChart"></canvas></div>
+      </div>
+
+    </div><!-- /d-content -->
+  </div><!-- /d-main -->
+
+  <!-- ══ MOBILE TOP ══ -->
+  <div class="m-top m-only">
+    <div class="m-logo"><div class="m-logo-icon">⛷</div>SkiVision AI</div>
+    <div class="m-topbtns">
+      <div class="m-ibtn" onclick="mToast('Уведомления')"><i class="ti ti-bell"></i><div class="m-ndot"></div></div>
+      <div class="m-ibtn" onclick="mToast('Профиль')"><i class="ti ti-user-circle"></i></div>
+    </div>
+  </div>
+
+  <!-- ══ MOBILE PAGES ══ -->
+  <div class="m-pages m-only">
+
+    <!-- page: report -->
+    <div class="m-page active" id="mp-report">
+      <div class="m-athletes">
+        <div class="m-achip sel" onclick="mSelAthlete(this,'Громов А.В.','МС')"><div class="m-aav" style="background:rgba(10,255,217,.15);color:#0AFFD9">АГ</div><div><div class="m-aname">Громов А.В.</div><div class="m-arank">МС</div></div></div>
+        <div class="m-achip" onclick="mSelAthlete(this,'Ковалёва Е.С.','КМС')"><div class="m-aav" style="background:rgba(231,76,60,.15);color:#E74C3C">ЕК</div><div><div class="m-aname">Ковалёва Е.С.</div><div class="m-arank">КМС</div></div></div>
+        <div class="m-achip" onclick="mSelAthlete(this,'Зайцев П.О.','1р')"><div class="m-aav" style="background:rgba(241,196,15,.15);color:#F1C40F">ПЗ</div><div><div class="m-aname">Зайцев П.О.</div><div class="m-arank">1р</div></div></div>
+        <div class="m-achip" onclick="mGoPage('upload')"><div class="m-aav" style="background:var(--s2);color:var(--t2)"><i class="ti ti-plus" style="font-size:12px"></i></div><div><div class="m-aname" style="color:var(--t2)">Добавить</div></div></div>
+      </div>
+      <div class="m-sumbar">
+        <div class="m-score"><div class="m-si">60</div></div>
+        <div class="m-stext"><div class="m-sname" id="mAthName">Громов А.В.</div><div class="m-smeta">24.05.2025 · Классический ход</div></div>
+        <div class="m-sstatus">Требует работы</div>
+      </div>
+      <div class="m-metrics">
+        <div class="m-mcard"><div class="m-mlabel">Угол колена</div><div class="m-mval warn">145°</div><div class="m-munit">Норма: 130–140°</div><div class="m-mdelta bad">▲ +5°</div></div>
+        <div class="m-mcard"><div class="m-mlabel">Наклон корпуса</div><div class="m-mval bad">22°</div><div class="m-munit">Норма: 30–35°</div><div class="m-mdelta bad">▼ −10°</div></div>
+        <div class="m-mcard"><div class="m-mlabel">Длина шага</div><div class="m-mval ok">1.84 м</div><div class="m-munit">Норма: 1.7–2.0 м</div><div class="m-mdelta ok">✓ В норме</div></div>
+        <div class="m-mcard"><div class="m-mlabel">Частота</div><div class="m-mval ok">76</div><div class="m-munit">шаг/мин</div><div class="m-mdelta ok">✓ В норме</div></div>
+      </div>
+      <div class="m-skelwrap">
+        <div class="m-skeltop">
+          <div class="card-label">Скелет · Боковой ракурс</div>
+          <div class="m-phase-badge" id="mPhaseBadge">Фаза: скольжение</div>
+        </div>
+        <div class="m-skel-canvas-wrap"><canvas id="mSkelCanvas"></canvas></div>
+        <div class="m-legend">
+          <div class="m-litem"><div class="ldot" style="background:var(--green)"></div>Норма</div>
+          <div class="m-litem"><div class="ldot" style="background:var(--yellow)"></div>Отклонение</div>
+          <div class="m-litem"><div class="ldot" style="background:var(--red)"></div>Ошибка</div>
+        </div>
+        <div class="m-skelctrl">
+          <div class="m-cb" onclick="skPrev('m')"><i class="ti ti-chevron-left"></i></div>
+          <div class="m-cb play" id="mPlayBtn" onclick="skToggle('m')"><i class="ti ti-player-play"></i></div>
+          <div class="m-cb" onclick="skNext('m')"><i class="ti ti-chevron-right"></i></div>
+          <div class="m-tl" id="mBar" ontouchstart="mTlStart(event)" ontouchmove="mTlMove(event)"><div class="m-tl-fill" id="mFill"><div class="m-tl-thumb"></div></div></div>
+          <div class="m-tlabel" id="mLabel">2.1 / 5.0 с</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- page: upload -->
+    <div class="m-page" id="mp-upload">
+      <div class="m-sec">
+        <div class="m-stitle">Антропометрия</div>
+        <div class="m-fgrid">
+          <div><div class="m-flabel">Рост</div><input class="m-finput" type="number" value="178"><div style="font-size:10px;color:var(--t2);margin-top:3px">см</div></div>
+          <div><div class="m-flabel">Бедро</div><input class="m-finput" type="number" value="44"><div style="font-size:10px;color:var(--t2);margin-top:3px">см</div></div>
+          <div><div class="m-flabel">Голень</div><input class="m-finput" type="number" value="41"><div style="font-size:10px;color:var(--t2);margin-top:3px">см</div></div>
+          <div><div class="m-flabel">Плечо</div><input class="m-finput" type="number" value="32"><div style="font-size:10px;color:var(--t2);margin-top:3px">см</div></div>
+          <div><div class="m-flabel">Предплечье</div><input class="m-finput" type="number" value="27"><div style="font-size:10px;color:var(--t2);margin-top:3px">см</div></div>
+          <div><div class="m-flabel">Ход</div><select class="m-finput"><option>Классический</option><option>Коньковый</option></select></div>
+        </div>
+      </div>
+      <div class="m-ugrid">
+        <label for="mVidF"><div class="m-uzone" id="mFZ"><div class="m-uicon"><i class="ti ti-video"></i></div><div class="m-utitle">Фронтальный</div><div class="m-usub">MP4 / MOV · ≥60 fps</div></div></label>
+        <input type="file" id="mVidF" accept="video/*" onchange="mFileOk('mFZ')">
+        <label for="mVidS"><div class="m-uzone" id="mSZ"><div class="m-uicon"><i class="ti ti-video"></i></div><div class="m-utitle">Боковой</div><div class="m-usub">MP4 / MOV · ≥60 fps</div></div></label>
+        <input type="file" id="mVidS" accept="video/*" onchange="mFileOk('mSZ')">
+      </div>
+      <div class="m-sec">
+        <div class="m-stitle">Калибровочный маркер</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <i class="ti ti-grid" style="font-size:24px;color:var(--t2)"></i>
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--t0)">Шахматная доска 5×5</div><div style="font-size:11px;color:var(--t2);margin-top:2px">Клетка: <span style="font-family:var(--fm);color:var(--brand)">5.0 см</span></div></div>
+          <input class="m-finput" type="number" value="5.0" style="width:80px">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="m-btnfull g">Сохранить черновик</button>
+        <button class="m-btnfull p" onclick="mStartAnalysis()"><i class="ti ti-player-play"></i> Запустить анализ</button>
+      </div>
+      <div id="mAnalBlock" style="display:none;margin-top:14px">
+        <div class="m-sec">
+          <div class="m-stitle" style="margin-bottom:12px">Обработка видео</div>
+          <div id="mSteps">
+            <div class="m-srow done"><div class="m-sico"><i class="ti ti-check"></i></div><div class="m-sinfo"><div class="m-sname">Загрузка видео</div><div class="m-ssub">2 файла · 347 МБ</div></div></div>
+            <div class="m-srow running" id="ms1"><div class="m-sico"><i class="ti ti-robot"></i></div><div class="m-sinfo"><div class="m-sname">Детекция скелета</div><div class="m-ssub">Выполняется...</div></div><div class="m-spinner"></div></div>
+            <div class="m-srow pending" id="ms2"><div class="m-sico"><i class="ti ti-ruler"></i></div><div class="m-sinfo"><div class="m-sname">Калибровка</div><div class="m-ssub">Ожидание...</div></div></div>
+            <div class="m-srow pending" id="ms3"><div class="m-sico"><i class="ti ti-math"></i></div><div class="m-sinfo"><div class="m-sname">Биомеханика</div><div class="m-ssub">Ожидание...</div></div></div>
+            <div class="m-srow pending" id="ms4"><div class="m-sico"><i class="ti ti-git-compare"></i></div><div class="m-sinfo"><div class="m-sname">Сравнение с эталоном</div><div class="m-ssub">Ожидание...</div></div></div>
+          </div>
+          <div class="m-ptrack2"><div class="m-pfill" id="mPFill" style="width:23%"></div></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:10.5px;color:var(--t2)" id="mPPct">23%</span><span style="font-size:10.5px;color:var(--t2)">~18 сек</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- page: errors -->
+    <div class="m-page" id="mp-errors">
+      <div class="card">
+        <div class="card-hd"><div class="card-label">Выявленные параметры</div><div style="font-size:10px;color:var(--t2)">3 ошибки</div></div>
+        <div class="m-ei"><div class="m-etop"><div class="m-edot r"></div><div class="m-etitle">Недостаточный наклон туловища</div></div><div class="m-etext">22° против нормы 30–35°. Наклоните корпус вперёд — улучшит перенос веса и длину шага.</div><div class="m-echips"><span class="chip bad">22°</span><span style="font-size:10px;color:var(--t2)">→</span><span class="chip ref">30–35°</span></div></div>
+        <div class="m-ei"><div class="m-etop"><div class="m-edot y"></div><div class="m-etitle">Угол правого колена завышен</div></div><div class="m-etext">145° (норма 130–140°). Увеличьте сгибание в фазе толчка.</div><div class="m-echips"><span class="chip warn">145°</span><span style="font-size:10px;color:var(--t2)">→</span><span class="chip ref">130–140°</span></div></div>
+        <div class="m-ei"><div class="m-etop"><div class="m-edot y"></div><div class="m-etitle">Асимметрия работы рук</div></div><div class="m-etext">Левая рука отстаёт на 0.08 с. Синхронизируйте с шагом.</div><div class="m-echips"><span class="chip warn">Δ 0.08 с</span></div></div>
+        <div class="m-ei"><div class="m-etop"><div class="m-edot g"></div><div class="m-etitle">Длина и частота шага — норма</div></div><div class="m-etext">Оба параметра в пределах эталона. Продолжайте работу.</div><div class="m-echips"><span class="chip ok">1.84 м</span><span class="chip ok">76 ш/мин</span></div></div>
+      </div>
+    </div>
+
+    <!-- page: charts -->
+    <div class="m-page" id="mp-charts">
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hd"><div class="card-label">Фазы движения</div></div>
+        <div style="padding:13px">
+          <div class="m-prow"><div class="m-pname">Скольжение л.</div><div class="m-ptrack"><div class="m-pseg" style="width:38%;background:rgba(10,255,217,.6)"></div></div><div class="m-ppct">38%</div></div>
+          <div class="m-prow"><div class="m-pname">Отталкивание л.</div><div class="m-ptrack"><div class="m-pseg" style="width:18%;background:rgba(231,76,60,.7)"></div></div><div class="m-ppct">18%</div></div>
+          <div class="m-prow"><div class="m-pname">Скольжение п.</div><div class="m-ptrack"><div class="m-pseg" style="width:32%;background:rgba(10,255,217,.4)"></div></div><div class="m-ppct">32%</div></div>
+          <div class="m-prow"><div class="m-pname">Отталкивание п.</div><div class="m-ptrack"><div class="m-pseg" style="width:12%;background:rgba(241,196,15,.7)"></div></div><div class="m-ppct">12%</div></div>
+          <div class="tip">💡 Фаза отталкивания правой ноги короче нормы на <span style="color:var(--yellow);font-weight:700">6%</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="m-ctabs">
+          <div class="m-ctab active" onclick="mSetCTab('mc1',this)">Углы суставов</div>
+          <div class="m-ctab" onclick="mSetCTab('mc2',this)">Длина шага</div>
+          <div class="m-ctab" onclick="mSetCTab('mc3',this)">Частота</div>
+        </div>
+        <div id="mc1" class="m-cpanel active"><div style="position:relative;height:220px"><canvas id="mAC"></canvas></div></div>
+        <div id="mc2" class="m-cpanel"><div style="position:relative;height:220px"><canvas id="mSC"></canvas></div></div>
+        <div id="mc3" class="m-cpanel"><div style="position:relative;height:220px"><canvas id="mFC"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- page: progress/compare -->
+    <div class="m-page" id="mp-progress">
+      <div class="m-sec" style="margin-bottom:12px">
+        <div class="m-stitle">Сравнить сессии</div>
+        <div class="date-row" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <select class="m-finput" style="flex:1"><option>24.05.2025</option><option>15.04.2025</option></select>
+          <div style="font-size:11px;color:var(--t2)">vs</div>
+          <select class="m-finput" style="flex:1"><option>15.04.2025</option><option>01.03.2025</option></select>
+        </div>
+        <button class="m-btnfull g">Сравнить</button>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hd"><div class="card-label">Изменение: 24.05 vs 15.04</div></div>
+        <div style="padding:12px">
+          <div class="m-crow"><div class="m-cname">Наклон туловища</div><div class="m-cval bad">22°</div><div style="font-size:11px;color:var(--t2);margin:0 4px">→</div><div class="m-cval warn">26°</div><div class="m-cref" style="margin-left:auto">30–35°</div></div>
+          <div class="m-crow"><div class="m-cname">Угол колена пр.</div><div class="m-cval warn">145°</div><div style="font-size:11px;color:var(--t2);margin:0 4px">→</div><div class="m-cval warn">148°</div><div class="m-cref" style="margin-left:auto">130–140°</div></div>
+          <div class="m-crow"><div class="m-cname">Длина шага</div><div class="m-cval ok">1.84 м</div><div style="font-size:11px;color:var(--t2);margin:0 4px">→</div><div class="m-cval ok">1.76 м</div><div class="m-cref" style="margin-left:auto">1.7–2.0</div></div>
+          <div class="m-crow"><div class="m-cname">Частота шагов</div><div class="m-cval ok">76</div><div style="font-size:11px;color:var(--t2);margin:0 4px">→</div><div class="m-cval ok">72</div><div class="m-cref" style="margin-left:auto">70–85</div></div>
+        </div>
+      </div>
+      <div class="card"><div style="padding:14px"><div style="position:relative;height:220px"><canvas id="mCmpC"></canvas></div></div></div>
+    </div>
+
+  </div><!-- /m-pages -->
+
+  <!-- ══ MOBILE BOTTOM NAV ══ -->
+  <div class="m-nav m-only">
+    <div class="m-nbtn active" id="mnb-report" onclick="mGoPage('report')"><div class="m-nbar"></div><i class="ti ti-activity"></i>Отчёт</div>
+    <div class="m-nbtn" id="mnb-upload" onclick="mGoPage('upload')"><div class="m-nbar"></div><i class="ti ti-upload"></i>Анализ</div>
+    <div class="m-nbtn" id="mnb-errors" onclick="mGoPage('errors')"><div class="m-nbar"></div><i class="ti ti-alert-triangle"></i>Ошибки<div class="m-nbadge">3</div></div>
+    <div class="m-nbtn" id="mnb-charts" onclick="mGoPage('charts')"><div class="m-nbar"></div><i class="ti ti-chart-dots"></i>Графики</div>
+    <div class="m-nbtn" id="mnb-progress" onclick="mGoPage('progress')"><div class="m-nbar"></div><i class="ti ti-git-compare"></i>Прогресс</div>
+  </div>
+
+</div><!-- /app -->
+<div class="m-toast m-only" id="mToastEl"></div>
+
+<script>
+/* ════ SPLASH → APP ════ */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('gone');
+    document.getElementById('app').classList.add('show');
+    initSkeletons();
+    initCharts();
+  }, 1350);
+});
+
+/* ════ SKELETON ════ */
+const PHASE_LABELS = ['скольжение','отталкивание л.','скольжение','отталкивание п.','перенос палок'];
+const state = { d: { p: 0.42, playing: false, iv: null }, m: { p: 0.42, playing: false, iv: null } };
+
+function initSkeletons() {
+  resizeSkel('d'); resizeSkel('m');
+  updateSkel('d'); updateSkel('m');
+  window.addEventListener('resize', () => { resizeSkel('d'); updateSkel('d'); resizeSkel('m'); updateSkel('m'); });
+}
+
+function resizeSkel(k) {
+  const id = k === 'd' ? 'dSkelCanvas' : 'mSkelCanvas';
+  const cv = document.getElementById(id);
+  if (!cv) return;
+  const wrap = cv.parentElement;
+  cv.width = wrap.clientWidth;
+  cv.height = wrap.clientHeight;
+}
+
+function drawSkel(k, t) {
+  const id = k === 'd' ? 'dSkelCanvas' : 'mSkelCanvas';
+  const cv = document.getElementById(id);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,.035)';
+  ctx.lineWidth = .5;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  const cx = W * 0.5;                          // ← центр по горизонтали
+  const knee = 145 + Math.sin(t * Math.PI * 2) * 8;
+  const tilt = 22  + Math.sin(t * Math.PI * 2 + .5) * 3;
+  const leg  = Math.sin(t * Math.PI * 2);
+  const arm  = Math.sin(t * Math.PI * 2 + Math.PI);
+
+  const hip   = { x: cx, y: H * 0.5 };
+  const torso = { x: cx - Math.sin(tilt*Math.PI/180)*60, y: hip.y - Math.cos(tilt*Math.PI/180)*60 };
+  const head  = { x: torso.x - Math.sin(tilt*Math.PI/180)*18, y: torso.y - 18 };
+  const kR    = { x: hip.x + leg*15 + 10, y: hip.y + 55 };
+  const aR    = { x: kR.x + 5, y: kR.y + 50 };
+  const kL    = { x: hip.x - leg*15 - 10, y: hip.y + 55 };
+  const aL    = { x: kL.x - 5, y: kL.y + 50 };
+  const shR   = { x: torso.x + 12, y: torso.y + 8 };
+  const shL   = { x: torso.x - 12, y: torso.y + 8 };
+  const elR   = { x: shR.x + arm*18 + 10, y: shR.y + 30 };
+  const elL   = { x: shL.x - arm*18 - 10, y: shL.y + 30 };
+  const wrR   = { x: elR.x + 10, y: elR.y + 22 };
+  const wrL   = { x: elL.x - 10, y: elL.y + 22 };
+
+  const bone = (a,b,c,w) => { ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.strokeStyle=c; ctx.lineWidth=w||3; ctx.lineCap='round'; ctx.stroke(); };
+  const dot  = (p,c,r)   => { ctx.beginPath(); ctx.arc(p.x,p.y,r||5,0,Math.PI*2); ctx.fillStyle=c; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=1; ctx.stroke(); };
+
+  bone(hip,torso,'#E74C3C',4);
+  bone(hip,kR,'#F1C40F',3.5); bone(kR,aR,'#F1C40F',3);
+  bone(hip,kL,'#2ECC71',3.5); bone(kL,aL,'#2ECC71',3);
+  bone(shR,elR,'#2ECC71',3);  bone(elR,wrR,'#2ECC71',2.5);
+  bone(shL,elL,'#F1C40F',3);  bone(elL,wrL,'#F1C40F',2.5);
+
+  dot(hip,'#fff',6); dot(torso,'#fff',5); dot(head,'#ddd',10);
+  dot(kR,'#F1C40F',6); dot(aR,'#F1C40F',5);
+  dot(kL,'#2ECC71',6); dot(aL,'#2ECC71',5);
+  dot(shR,'#2ECC71',5); dot(shL,'#F1C40F',5);
+  dot(elR,'#2ECC71',4); dot(elL,'#F1C40F',4);
+
+  ctx.font = 'bold 11px "JetBrains Mono",monospace';
+  ctx.fillStyle = '#F1C40F'; ctx.fillText(Math.round(knee)+'°', kR.x+10, kR.y-3);
+  ctx.fillStyle = '#E74C3C'; ctx.fillText(Math.round(tilt)+'°', torso.x+12, (hip.y+torso.y)/2);
+
+  ctx.beginPath(); ctx.moveTo(0,H-20); ctx.lineTo(W,H-20);
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; ctx.setLineDash([8,8]); ctx.stroke(); ctx.setLineDash([]);
+
+  const pi = Math.floor(t * PHASE_LABELS.length) % PHASE_LABELS.length;
+  const bid = k==='d'?'dPhaseBadge':'mPhaseBadge';
+  const b = document.getElementById(bid);
+  if (b) b.textContent = 'Фаза: ' + PHASE_LABELS[pi];
+}
+
+function updateSkel(k) {
+  const p = state[k].p;
+  drawSkel(k, p);
+  const fi = k==='d'?'dFill':'mFill';
+  const li = k==='d'?'dLabel':'mLabel';
+  const f = document.getElementById(fi), l = document.getElementById(li);
+  if (f) f.style.width = (p*100)+'%';
+  if (l) l.textContent = (p*5).toFixed(1)+' / 5.0 с';
+}
+
+function skToggle(k) {
+  const s = state[k];
+  s.playing = !s.playing;
+  const bi = k==='d'?'dPlayBtn':'mPlayBtn';
+  const b = document.getElementById(bi);
+  if (b) b.innerHTML = s.playing ? '<i class="ti ti-player-pause"></i>' : '<i class="ti ti-player-play"></i>';
+  if (s.playing) {
+    s.iv = setInterval(() => { s.p += 0.005; if (s.p>1) s.p=0; updateSkel(k); }, 40);
+  } else { clearInterval(s.iv); }
+}
+
+function skPrev(k) { state[k].p = Math.max(0, state[k].p - .02); updateSkel(k); }
+function skNext(k) { state[k].p = Math.min(1, state[k].p + .02); updateSkel(k); }
+function skReset(k){ state[k].p = 0; updateSkel(k); }
+
+function skSeek(e, el, k) {
+  const r = el.getBoundingClientRect();
+  state[k].p = Math.max(0, Math.min(1, (e.clientX-r.left)/r.width));
+  updateSkel(k);
+}
+
+let mTlDragging = false;
+function mTlStart(e) { mTlDragging=true; mTlDo(e); }
+function mTlMove(e)  { if(mTlDragging){ e.preventDefault(); mTlDo(e); } }
+function mTlDo(e) {
+  const bar = document.getElementById('mBar');
+  const r = bar.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  state.m.p = Math.max(0, Math.min(1, (cx-r.left)/r.width));
+  updateSkel('m');
+}
+document.addEventListener('touchend', () => mTlDragging=false);
+
+/* ════ CHARTS ════ */
+const CFG = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+  scales:{ x:{ticks:{color:'#4A5568',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},
+           y:{ticks:{color:'#4A5568',font:{size:9}},grid:{color:'rgba(255,255,255,.06)'}} } };
+
+let chartsInited = false;
+function initCharts() {
+  if (chartsInited) return;
+  chartsInited = true;
+  const T30 = Array.from({length:30},(_,i)=>(i*5/30).toFixed(1)+'с');
+  const T40 = Array.from({length:40},(_,i)=>(i*5/40).toFixed(1)+'с');
+
+  const mkLine = (id, labels, datasets) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, { type:'line', data:{labels, datasets}, options:{...CFG} });
+  };
+  const mkBar = (id, labels, data, colors) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, { type:'bar', data:{labels,datasets:[{data,backgroundColor:colors||'rgba(10,255,217,.6)',borderRadius:4}]}, options:{...CFG} });
+  };
+
+  // mobile charts
+  mkLine('mAC', T30, [
+    {data:Array.from({length:30},(_,i)=>140+8*Math.sin(i*.8)+5*Math.random()),borderColor:'#0AFFD9',borderWidth:2,pointRadius:0,tension:.4},
+    {data:Array.from({length:30},(_,i)=>133+6*Math.sin(i*.8+1)+4*Math.random()),borderColor:'#E74C3C',borderWidth:2,pointRadius:0,tension:.4},
+    {data:Array.from({length:30},(_,i)=>22+3*Math.sin(i*.5)+2*Math.random()),borderColor:'#F1C40F',borderWidth:2,pointRadius:0,tension:.4}
+  ]);
+  const steps=[1.79,1.84,1.82,1.87,1.81,1.85,1.83,1.88];
+  mkBar('mSC', steps.map((_,i)=>'Шаг '+(i+1)), steps, steps.map(v=>v<1.7?'rgba(231,76,60,.7)':'rgba(46,204,113,.7)'));
+  mkLine('mFC', Array.from({length:20},(_,i)=>i+'с'), [
+    {data:Array.from({length:20},(_,i)=>74+4*Math.sin(i*.6)+2*Math.random()),borderColor:'#0AFFD9',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(10,255,217,.08)',tension:.4}
+  ]);
+  mkLine('mCmpC', ['Наклон','Колено пр.','Колено л.','Шаг×10','Частота/10'], [
+    {data:[22,145,133,18.4,7.6],borderColor:'#0AFFD9',backgroundColor:'rgba(10,255,217,.1)',fill:false,pointRadius:4,tension:.3},
+    {data:[26,148,136,17.6,7.2],borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,.08)',fill:false,pointRadius:4,tension:.3}
+  ]);
+
+  // desktop charts
+  mkLine('dAC2', T40, [
+    {data:Array.from({length:40},(_,i)=>140+10*Math.sin(i*.7)+4*Math.random()),borderColor:'#0AFFD9',borderWidth:2,pointRadius:0,fill:false,tension:.4},
+    {data:Array.from({length:40},(_,i)=>133+7*Math.sin(i*.7+1)+3*Math.random()),borderColor:'#E74C3C',borderWidth:2,pointRadius:0,fill:false,tension:.4},
+    {data:Array.from({length:40},(_,i)=>22+4*Math.sin(i*.4)+2*Math.random()),borderColor:'#F1C40F',borderWidth:2,pointRadius:0,fill:false,tension:.4}
+  ]);
+  const steps12=[1.79,1.84,1.82,1.87,1.81,1.85,1.83,1.88,1.80,1.86,1.84,1.89];
+  mkBar('dSC2', steps12.map((_,i)=>'Шаг '+(i+1)), steps12, 'rgba(46,204,113,.6)');
+  mkLine('dFC2', Array.from({length:20},(_,i)=>i+'с'), [
+    {data:Array.from({length:20},(_,i)=>74+4*Math.sin(i*.6)+2*Math.random()),borderColor:'#0AFFD9',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(10,255,217,.08)',tension:.4}
+  ]);
+  mkBar('dCmpChart', ['Наклон','Колено пр.','Колено л.','Шаг×10','Частота/10'],
+    [[22,145,133,18.4,7.6],[26,148,136,17.6,7.2]].map((d,gi)=>({data:d,backgroundColor:gi===0?'rgba(10,255,217,.6)':'rgba(55,138,221,.5)',borderRadius:4})));
+  // дублирую для dCmpChart grouped
+  const dcmp = document.getElementById('dCmpChart');
+  if (dcmp) {
+    Chart.getChart(dcmp)?.destroy();
+    new Chart(dcmp, { type:'bar', data:{
+      labels:['Наклон','Колено пр.','Колено л.','Шаг×10','Частота/10'],
+      datasets:[
+        {label:'24.05',data:[22,145,133,18.4,7.6],backgroundColor:'rgba(10,255,217,.6)',borderRadius:4},
+        {label:'15.04',data:[26,148,136,17.6,7.2],backgroundColor:'rgba(55,138,221,.5)',borderRadius:4}
+      ]}, options:{...CFG,plugins:{legend:{display:true,labels:{color:'#8090A8',font:{size:10}}}}} });
+  }
+  // small report charts
+  ['dAngChart','dStepChart'].forEach(id => { const el=document.getElementById(id); if(el&&!Chart.getChart(el)) mkLine(id,T30,[{data:Array.from({length:30},(_,i)=>140+8*Math.sin(i*.8)),borderColor:'#0AFFD9',borderWidth:2,pointRadius:0,tension:.4}]); });
+}
+
+/* ════ DESKTOP NAV ════ */
+function dSetNav(el) { document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
+function dSelAthlete(el,name) { document.querySelectorAll('.sb-card').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); document.getElementById('dBc').textContent=name+' · 24.05.2025 · Классический ход'; }
+
+function dSetTab(id,el) {
+  document.querySelectorAll('.d-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.d-panel').forEach(p=>p.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const pan = document.getElementById('dpanel-'+id);
+  if(pan) pan.classList.add('active');
+  if(id==='charts') initCharts();
+}
+
+function dSetCTab(id,el) {
+  document.querySelectorAll('#dpanel-report .d-ctab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['dph','dang','dst'].forEach(i=>{ const el2=document.getElementById(i); if(el2) el2.style.display=i===id?'':'none'; });
+  if(id==='dang'&&!Chart.getChart('dAngChart')) initCharts();
+}
+
+function dSetCTab2(id,el) {
+  document.querySelectorAll('#dpanel-charts .d-ctab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['dc1','dc2','dc3'].forEach(i=>{ const el2=document.getElementById(i); if(el2) el2.style.display=i===id?'':'none'; });
+}
+
+function dFileOk(id) { const z=document.getElementById(id); z.classList.add('has-file'); z.querySelector('.d-utitle').textContent='Файл загружен'; }
+function dExport(btn) { const o=btn.innerHTML; btn.innerHTML='<i class="ti ti-check"></i> Готово'; setTimeout(()=>btn.innerHTML=o,1500); }
+
+let dStep=0;
+function dStartAnalysis() {
+  document.getElementById('dAnalBlock').style.display='block'; dStep=0; dRunStep();
+}
+function dRunStep() {
+  const ids=['ds1','ds2','ds3','ds4'];
+  const names=['Детекция скелета','Калибровка пиксель → метр','Расчёт биомеханики','Сравнение с эталоном'];
+  const subs=['1800 / 1800 кадров','1px = 0.54 мм','7 параметров','Рост 176–180 см'];
+  const pcts=[23,55,75,92,100];
+  const icos=['ti-robot','ti-ruler','ti-math','ti-git-compare'];
+  if(dStep>0){
+    const prev=document.getElementById(ids[dStep-1]);
+    prev.className='d-srow done';
+    prev.innerHTML=`<div class="d-si"><i class="ti ti-check"></i></div><div class="d-st"><div class="d-sn">${names[dStep-1]}</div><div class="d-ss">${subs[dStep-1]}</div></div>`;
+  }
+  if(dStep<ids.length){
+    const el=document.getElementById(ids[dStep]);
+    el.className='d-srow running';
+    el.innerHTML=`<div class="d-si"><i class="ti ${icos[dStep]}"></i></div><div class="d-st"><div class="d-sn">${names[dStep]}</div><div class="d-ss">Выполняется...</div></div><div class="d-spinner"></div>`;
+    document.getElementById('dPFill').style.width=pcts[dStep]+'%';
+    document.getElementById('dPPct').textContent=pcts[dStep]+'%';
+    dStep++; setTimeout(dRunStep,1800);
+  } else {
+    document.getElementById('dPFill').style.width='100%';
+    document.getElementById('dPPct').textContent='100% — Готово';
+    setTimeout(()=>dSetTab('report',document.querySelector('[data-dtab=report]')),700);
+  }
+}
+
+/* ════ MOBILE NAV ════ */
+function mGoPage(id) {
+  document.querySelectorAll('.m-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.m-nbtn').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById('mp-'+id);
+  const nb=document.getElementById('mnb-'+id);
+  if(pg) pg.classList.add('active');
+  if(nb) nb.classList.add('active');
+  if(id==='charts') initCharts();
+}
+
+function mSelAthlete(el,name) {
+  document.querySelectorAll('.m-achip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel');
+  document.getElementById('mAthName').textContent=name;
+}
+
+function mFileOk(id) { const z=document.getElementById(id); z.classList.add('has-file'); z.querySelector('.m-utitle').textContent='Файл загружен'; }
+
+let mStep=0;
+function mStartAnalysis() {
+  document.getElementById('mAnalBlock').style.display='block'; mStep=0; mRunStep();
+}
+function mRunStep() {
+  const ids=['ms1','ms2','ms3','ms4'];
+  const names=['Детекция скелета','Калибровка','Биомеханика','Сравнение с эталоном'];
+  const subs=['1800 / 1800 кадров','1px = 0.54 мм','7 параметров','Готово'];
+  const pcts=[23,55,75,92,100];
+  const icos=['ti-robot','ti-ruler','ti-math','ti-git-compare'];
+  if(mStep>0){
+    const prev=document.getElementById(ids[mStep-1]);
+    prev.className='m-srow done';
+    prev.innerHTML=`<div class="m-sico"><i class="ti ti-check"></i></div><div class="m-sinfo"><div class="m-sname">${names[mStep-1]}</div><div class="m-ssub">${subs[mStep-1]}</div></div>`;
+  }
+  if(mStep<ids.length){
+    const el=document.getElementById(ids[mStep]);
+    el.className='m-srow running';
+    el.innerHTML=`<div class="m-sico"><i class="ti ${icos[mStep]}"></i></div><div class="m-sinfo"><div class="m-sname">${names[mStep]}</div><div class="m-ssub">Выполняется...</div></div><div class="m-spinner"></div>`;
+    document.getElementById('mPFill').style.width=pcts[mStep]+'%';
+    document.getElementById('mPPct').textContent=pcts[mStep]+'%';
+    mStep++; setTimeout(mRunStep,1800);
+  } else {
+    document.getElementById('mPFill').style.width='100%';
+    document.getElementById('mPPct').textContent='100% — Готово';
+    setTimeout(()=>mGoPage('report'),700);
+  }
+}
+
+function mSetCTab(id,el) {
+  document.querySelectorAll('.m-ctab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['mc1','mc2','mc3'].forEach(i=>{ const e=document.getElementById(i); if(e) e.classList.toggle('active',i===id); });
+}
+
+let mToastTimer;
+function mToast(msg) {
+  const el=document.getElementById('mToastEl');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(mToastTimer); mToastTimer=setTimeout(()=>el.classList.remove('show'),2000);
+}
+</script>
+</body>
+</html>
