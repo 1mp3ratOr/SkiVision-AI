@@ -976,7 +976,97 @@ function dExport(btn) { const o=btn.innerHTML; btn.innerHTML='<i class="ti ti-ch
 
 let dStep=0;
 function dStartAnalysis() {
-  document.getElementById('dAnalBlock').style.display='block'; dStep=0; dRunStep();
+ async function dStartAnalysis() {
+    const file = window.selectedVideoFile;
+    if (!file) {
+        alert('Сначала выберите видео');
+        return;
+    }
+
+    const analBlock = document.getElementById('dAnalBlock');
+    analBlock.style.display = 'block';
+
+    // Сброс и установка первого шага
+    const stepIds = ['ds1', 'ds2', 'ds3', 'ds4'];
+    stepIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.className = 'd-srow pending';
+            el.innerHTML = `<div class="d-si"><i class="ti ti-clock"></i></div>
+                            <div class="d-st"><div class="d-sn">${getStepNameDesktop(id)}</div><div class="d-ss">Ожидание...</div></div>`;
+        }
+    });
+    setStepDesktop('ds1', 'running', 'Отправка видео...');
+
+    const formData = new FormData();
+    formData.append('video', file);
+
+    try {
+        const response = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.error) {
+            setStepDesktop('ds1', 'error', 'Ошибка: ' + data.error);
+            return;
+        }
+
+        setStepDesktop('ds1', 'done', 'Загружено ' + (file.size/1024/1024).toFixed(1) + ' МБ');
+        setStepDesktop('ds2', 'done', 'Распознано ' + data.frames + ' кадров');
+        setStepDesktop('ds3', 'done', 'Углы и параметры вычислены');
+        setStepDesktop('ds4', 'done', 'Сравнение с эталоном выполнено');
+
+        document.getElementById('dPFill').style.width = '100%';
+        document.getElementById('dPPct').textContent = '100% — Готово!';
+
+        showDesktopResultLinks(data.links);
+        if (data.summary) updateDesktopMetrics(data.summary);
+        if (data.errors) updateDesktopErrors(data.errors);
+
+    } catch (err) {
+        setStepDesktop('ds1', 'error', 'Ошибка: ' + err.message);
+    }
+}
+
+function getStepNameDesktop(id) {
+    const map = {
+        'ds1': 'Отправка и распознавание',
+        'ds2': 'Калибровка и биомеханика',
+        'ds3': 'Анализ углов',
+        'ds4': 'Сравнение с эталоном'
+    };
+    return map[id] || id;
+}
+
+function setStepDesktop(id, status, message) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'd-srow ' + status;
+    const sub = el.querySelector('.d-ss');
+    if (sub) sub.textContent = message;
+    const icon = el.querySelector('.d-si i');
+    if (icon) {
+        if (status === 'done') icon.className = 'ti ti-check';
+        else if (status === 'running') icon.className = 'ti ti-robot';
+        else if (status === 'error') icon.className = 'ti ti-alert-triangle';
+    }
+}
+
+function showDesktopResultLinks(links) {
+    const container = document.createElement('div');
+    container.id = 'desktopResultLinks';
+    container.style.cssText = 'margin-top:16px; padding:16px; background:rgba(46,204,113,.08); border-radius:8px; border:1px solid rgba(46,204,113,.2);';
+    let html = '<div style="font-weight:700;color:#2ECC71;margin-bottom:10px;">✅ Анализ завершён! Скачайте результаты:</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+    if (links.video) html += `<a href="${links.video}" download class="d-btn g" style="background:var(--brand-dim);color:var(--brand);">🎥 Видео со скелетом</a>`;
+    if (links.csv) html += `<a href="${links.csv}" download class="d-btn g">📊 CSV (координаты)</a>`;
+    if (links.excel) html += `<a href="${links.excel}" download class="d-btn g">📈 Excel (углы)</a>`;
+    if (links.graph) html += `<a href="${links.graph}" download class="d-btn g">📉 График углов</a>`;
+    html += '</div></div>';
+    const analBlock = document.getElementById('dAnalBlock');
+    const existing = document.getElementById('desktopResultLinks');
+    if (existing) existing.remove();
+    analBlock.appendChild(container);
+}
 }
 function dRunStep() {
   const ids=['ds1','ds2','ds3','ds4'];
@@ -1022,8 +1112,117 @@ function mSelAthlete(el,name) {
 function mFileOk(id) { const z=document.getElementById(id); z.classList.add('has-file'); z.querySelector('.m-utitle').textContent='Файл загружен'; }
 
 let mStep=0;
-function mStartAnalysis() {
-  document.getElementById('mAnalBlock').style.display='block'; mStep=0; mRunStep();
+async function mStartAnalysis() {
+    const file = window.selectedVideoFile;
+    if (!file) {
+        alert('Сначала выберите видео');
+        return;
+    }
+
+    // Показываем блок прогресса
+    const analBlock = document.getElementById('mAnalBlock');
+    analBlock.style.display = 'block';
+
+    // Сброс шагов
+    const stepIds = ['ms1', 'ms2', 'ms3', 'ms4'];
+    stepIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.className = 'm-srow pending';
+            el.innerHTML = `<div class="m-sico"><i class="ti ti-clock"></i></div>
+                            <div class="m-sinfo"><div class="m-sname">${getStepName(id)}</div><div class="m-ssub">Ожидание...</div></div>`;
+        }
+    });
+
+    // Ставим первый шаг как "в процессе"
+    setStepMobile('ms1', 'running', 'Отправка видео...');
+
+    const formData = new FormData();
+    formData.append('video', file);
+
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            setStepMobile('ms1', 'error', 'Ошибка: ' + data.error);
+            return;
+        }
+
+        // Успех — проходим все шаги
+        setStepMobile('ms1', 'done', 'Видео загружено (' + (file.size / 1024 / 1024).toFixed(1) + ' МБ)');
+        setStepMobile('ms2', 'done', 'Распознавание скелета: ' + data.frames + ' кадров');
+        setStepMobile('ms3', 'done', 'Биомеханические параметры вычислены');
+        setStepMobile('ms4', 'done', 'Сравнение с эталоном завершено');
+
+        // Обновляем прогресс-бар
+        document.getElementById('mPFill').style.width = '100%';
+        document.getElementById('mPPct').textContent = '100% — Готово!';
+
+        // Отображаем ссылки для скачивания
+        showMobileResultLinks(data.links);
+
+        // Обновляем метрики (если есть summary)
+        if (data.summary) {
+            updateMobileMetrics(data.summary);
+        }
+
+        // Если есть список ошибок — обновляем
+        if (data.errors) {
+            updateMobileErrors(data.errors);
+        }
+
+    } catch (err) {
+        setStepMobile('ms1', 'error', 'Ошибка соединения: ' + err.message);
+    }
+}
+
+// Вспомогательные функции
+function getStepName(id) {
+    const map = {
+        'ms1': 'Отправка и распознавание',
+        'ms2': 'Калибровка и биомеханика',
+        'ms3': 'Анализ углов',
+        'ms4': 'Сравнение с эталоном'
+    };
+    return map[id] || id;
+}
+
+function setStepMobile(id, status, message) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'm-srow ' + status;
+    const sub = el.querySelector('.m-ssub');
+    if (sub) sub.textContent = message;
+    // Меняем иконку
+    const icon = el.querySelector('.m-sico i');
+    if (icon) {
+        if (status === 'done') icon.className = 'ti ti-check';
+        else if (status === 'running') icon.className = 'ti ti-robot';
+        else if (status === 'error') icon.className = 'ti ti-alert-triangle';
+    }
+}
+
+function showMobileResultLinks(links) {
+    const container = document.createElement('div');
+    container.id = 'mobileResultLinks';
+    container.style.cssText = 'margin-top:14px; padding:14px; background:rgba(46,204,113,.1); border-radius:10px; border:1px solid rgba(46,204,113,.3);';
+    let html = '<div style="font-weight:700;color:#2ECC71;margin-bottom:8px;">✅ Анализ завершён!</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+    if (links.video) html += `<a href="${links.video}" download class="btn-small" style="background:var(--brand-dim);color:var(--brand);padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px;">🎥 Видео</a>`;
+    if (links.csv) html += `<a href="${links.csv}" download class="btn-small" style="background:var(--brand-dim);color:var(--brand);padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px;">📊 CSV</a>`;
+    if (links.excel) html += `<a href="${links.excel}" download class="btn-small" style="background:var(--brand-dim);color:var(--brand);padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px;">📈 Excel</a>`;
+    if (links.graph) html += `<a href="${links.graph}" download class="btn-small" style="background:var(--brand-dim);color:var(--brand);padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px;">📉 График</a>`;
+    html += '</div></div>';
+    // Вставляем после блока прогресса (или в конец m-sec)
+    const analBlock = document.getElementById('mAnalBlock');
+    const existing = document.getElementById('mobileResultLinks');
+    if (existing) existing.remove();
+    analBlock.appendChild(container);
 }
 function mRunStep() {
   const ids=['ms1','ms2','ms3','ms4'];
@@ -1062,6 +1261,28 @@ function mToast(msg) {
   el.textContent=msg; el.classList.add('show');
   clearTimeout(mToastTimer); mToastTimer=setTimeout(()=>el.classList.remove('show'),2000);
 }
-</script>
-</body>
+</script>// Для мобильной версии (зона с id="mFZ" или "mSZ" — я объединю в одну)
+document.querySelectorAll('.m-uzone, .d-uzone').forEach(zone => {
+    zone.addEventListener('click', function(e) {
+        // Если это не ссылка внутри, то открываем диалог
+        if (!e.target.closest('a')) {
+            document.getElementById('videoUpload').click();
+        }
+    });
+});
+
+// При выборе файла обновляем текст зоны
+document.getElementById('videoUpload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Обновляем все зоны загрузки (можно только активную, но пусть все)
+    document.querySelectorAll('.m-uzone, .d-uzone').forEach(zone => {
+        zone.classList.add('has-file');
+        const title = zone.querySelector('.m-utitle, .d-utitle');
+        if (title) title.textContent = file.name;
+    });
+    // Сохраняем имя файла в глобальную переменную
+    window.selectedVideoFile = file;
+});
+</body><input type="file" id="videoUpload" accept="video/*" style="display:none">
 </html>
